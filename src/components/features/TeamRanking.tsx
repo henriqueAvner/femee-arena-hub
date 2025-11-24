@@ -1,5 +1,6 @@
 import { Trophy, TrendingUp } from "lucide-react";
-import { Card } from "./ui/card";
+import { Card } from "../ui/card";
+import { Link } from "react-router-dom";
 
 interface Team {
   rank: number;
@@ -19,15 +20,16 @@ const teams: Team[] = [
 const TeamRanking = () => {
   return (
     <Card className="bg-card border-border p-4 space-y-4">
-      <div className="flex items-center gap-2 pb-3 border-b border-border">
+      <Link to="/ranking" className="flex items-center gap-2 pb-3 border-b border-border hover:opacity-80 transition-opacity">
         <Trophy className="h-5 w-5 text-gold" />
         <h2 className="text-lg font-bold text-foreground">Ranking de Times</h2>
-      </div>
+      </Link>
       
       <div className="space-y-3">
         {teams.map((team) => (
-          <div 
+          <Link 
             key={team.rank}
+            to={`/times/${team.name.toLowerCase().replace(/ /g, '-')}`}
             className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer"
           >
             <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
@@ -51,13 +53,13 @@ const TeamRanking = () => {
             {team.rank <= 3 && (
               <TrendingUp className="h-4 w-4 text-primary flex-shrink-0" />
             )}
-          </div>
+          </Link>
         ))}
       </div>
       
-      <button className="w-full py-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+      <Link to="/ranking" className="w-full block py-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors text-center">
         Ver ranking completo →
-      </button>
+      </Link>
     </Card>
   );
 };
