@@ -1,8 +1,8 @@
-import Header from "@/components/Header";
-import NewsCard from "@/components/NewsCard";
-import TeamRanking from "@/components/TeamRanking";
-import MerchandiseAd from "@/components/MerchandiseAd";
-import ChampionshipCard from "@/components/ChampionshipCard";
+import Header from "@/components/layout/Header";
+import NewsCard from "@/components/features/NewsCard";
+import TeamRanking from "@/components/features/TeamRanking";
+import MerchandiseAd from "@/components/features/MerchandiseAd";
+import ChampionshipCard from "@/components/features/ChampionshipCard";
 import heroBanner from "@/assets/hero-banner.jpg";
 import { Button } from "@/components/ui/button";
 import { Newspaper, Trophy } from "lucide-react";
