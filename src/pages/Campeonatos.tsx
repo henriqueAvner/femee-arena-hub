@@ -4,74 +4,50 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Users, Trophy, MapPin } from "lucide-react";
 import { useState } from "react";
 import RegistrationDialog from "@/components/forms/RegistrationDialog";
-
-interface Championship {
-  id: number;
-  title: string;
-  game: string;
-  date: string;
-  location: string;
-  teams: number;
-  prize: string;
-  status: "open" | "upcoming" | "closed";
-}
-
-const championships: Championship[] = [
-  {
-    id: 1,
-    title: "Campeonato Regional 2025",
-    game: "CS:GO",
-    date: "15/01/2025",
-    location: "Belo Horizonte - MG",
-    teams: 16,
-    prize: "R$ 10.000",
-    status: "open"
-  },
-  {
-    id: 2,
-    title: "Copa FEMEE de Inverno",
-    game: "League of Legends",
-    date: "20/02/2025",
-    location: "Contagem - MG",
-    teams: 8,
-    prize: "R$ 5.000",
-    status: "open"
-  },
-  {
-    id: 3,
-    title: "Torneio Estadual",
-    game: "Valorant",
-    date: "10/03/2025",
-    location: "Uberlândia - MG",
-    teams: 12,
-    prize: "R$ 8.000",
-    status: "upcoming"
-  },
-  {
-    id: 4,
-    title: "Championship Finals 2025",
-    game: "Rainbow Six",
-    date: "25/04/2025",
-    location: "Belo Horizonte - MG",
-    teams: 8,
-    prize: "R$ 15.000",
-    status: "upcoming"
-  },
-];
+import { useCampeonatos } from "@/hooks/api";
+import { LoadingPage } from "@/components/ui/loading";
+import { ErrorPage } from "@/components/ui/error-display";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatusCampeonato } from "@/types/api.types";
 
 const Campeonatos = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedCampeonatoId, setSelectedCampeonatoId] = useState<number | null>(null);
+  const { data: campeonatos, isLoading, error, refetch } = useCampeonatos();
 
-  const getStatusBadge = (status: Championship["status"]) => {
+  const getStatusBadge = (status: StatusCampeonato) => {
     switch (status) {
-      case "open":
+      case StatusCampeonato.InscricoesAbertas:
         return <span className="px-2 py-1 text-xs font-semibold bg-primary/20 text-primary rounded">Inscrições Abertas</span>;
-      case "upcoming":
-        return <span className="px-2 py-1 text-xs font-semibold bg-accent/20 text-accent rounded">Em Breve</span>;
-      case "closed":
+      case StatusCampeonato.EmAndamento:
+        return <span className="px-2 py-1 text-xs font-semibold bg-accent/20 text-accent rounded">Em Andamento</span>;
+      case StatusCampeonato.Finalizado:
         return <span className="px-2 py-1 text-xs font-semibold bg-muted text-muted-foreground rounded">Encerrado</span>;
+      case StatusCampeonato.Cancelado:
+        return <span className="px-2 py-1 text-xs font-semibold bg-destructive/20 text-destructive rounded">Cancelado</span>;
+      default:
+        return null;
     }
   };
+
+  const handleInscrever = (campeonatoId: number) => {
+    setSelectedCampeonatoId(campeonatoId);
+    setIsDialogOpen(true);
+  };
+
+  if (isLoading) {
+    return <LoadingPage message="Carregando campeonatos..." />;
+  }
+
+  if (error) {
+    return (
+      <ErrorPage
+        title="Erro ao carregar campeonatos"
+        message="Não foi possível carregar a lista de campeonatos. Tente novamente mais tarde."
+        onRetry={refetch}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,54 +58,80 @@ const Campeonatos = () => {
           <p className="text-muted-foreground">Próximos torneios e competições da FEMEE</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {championships.map((championship) => (
-            <Card key={championship.id} className="p-6 hover:bg-secondary/30 transition-colors">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-foreground mb-1">{championship.title}</h3>
-                  <p className="text-sm text-muted-foreground">{championship.game}</p>
+        {(!campeonatos || campeonatos.length === 0) ? (
+          <EmptyState
+            icon={Trophy}
+            title="Nenhum campeonato encontrado"
+            description="Ainda não há campeonatos cadastrados. Fique de olho para novidades!"
+          />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {campeonatos.map((campeonato) => (
+              <Card key={campeonato.id} className="p-6 hover:bg-secondary/30 transition-colors">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground mb-1">{campeonato.titulo}</h3>
+                    <p className="text-sm text-muted-foreground">{campeonato.jogo?.nome || 'Não especificado'}</p>
+                  </div>
+                  {getStatusBadge(campeonato.status)}
                 </div>
-                {getStatusBadge(championship.status)}
-              </div>
 
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  <span className="text-foreground">{championship.date}</span>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="text-foreground">
+                      {new Date(campeonato.dataInicio).toLocaleDateString('pt-BR')}
+                      {campeonato.dataFim && ` - ${new Date(campeonato.dataFim).toLocaleDateString('pt-BR')}`}
+                    </span>
+                  </div>
+                  {campeonato.local && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <span className="text-foreground">{campeonato.local}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="h-4 w-4 text-primary" />
+                    <span className="text-foreground">
+                      {campeonato.numeroInscritos ?? 0}/{campeonato.numeroVagas} times
+                    </span>
+                  </div>
+                  {campeonato.premiacao && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Trophy className="h-4 w-4 text-gold" />
+                      <span className="text-foreground font-semibold">R$ {campeonato.premiacao.toLocaleString('pt-BR')}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <span className="text-foreground">{championship.location}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-primary" />
-                  <span className="text-foreground">{championship.teams} times</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Trophy className="h-4 w-4 text-gold" />
-                  <span className="text-foreground font-semibold">{championship.prize}</span>
-                </div>
-              </div>
 
-              {championship.status === "open" && (
-                <Button 
-                  className="w-full esports-glow"
-                  onClick={() => setIsDialogOpen(true)}
-                >
-                  Inscrever-se
-                </Button>
-              )}
-              {championship.status === "upcoming" && (
-                <Button variant="secondary" className="w-full" disabled>
-                  Em Breve
-                </Button>
-              )}
-            </Card>
-          ))}
-        </div>
+                {campeonato.status === StatusCampeonato.InscricoesAbertas && (
+                  <Button 
+                    className="w-full esports-glow"
+                    onClick={() => handleInscrever(campeonato.id)}
+                  >
+                    Inscrever-se
+                  </Button>
+                )}
+                {campeonato.status === StatusCampeonato.Planejado && (
+                  <Button variant="secondary" className="w-full" disabled>
+                    Em Breve
+                  </Button>
+                )}
+                {campeonato.status === StatusCampeonato.EmAndamento && (
+                  <Button variant="secondary" className="w-full" disabled>
+                    Em Andamento
+                  </Button>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
-      <RegistrationDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
+      <RegistrationDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen}
+        campeonatoId={selectedCampeonatoId}
+      />
     </div>
   );
 };
