@@ -11,8 +11,6 @@ export const noticiasKeys = {
   lists: () => [...noticiasKeys.all, 'list'] as const,
   list: (params?: PaginationParams) => [...noticiasKeys.lists(), params] as const,
   recentes: (limit: number) => [...noticiasKeys.all, 'recentes', limit] as const,
-  byCategoria: (categoria: string, params?: PaginationParams) => 
-    [...noticiasKeys.all, 'categoria', categoria, params] as const,
   details: () => [...noticiasKeys.all, 'detail'] as const,
   detail: (id: number) => [...noticiasKeys.details(), id] as const,
   slug: (slug: string) => [...noticiasKeys.all, 'slug', slug] as const,
@@ -61,16 +59,5 @@ export function useNoticiaBySlug(slug: string) {
     queryKey: noticiasKeys.slug(slug),
     queryFn: () => noticiasService.getBySlug(slug),
     enabled: !!slug && slug.length > 0,
-  });
-}
-
-/**
- * Hook para buscar notícias por categoria
- */
-export function useNoticiasByCategoria(categoria: string, params?: PaginationParams) {
-  return useQuery({
-    queryKey: noticiasKeys.byCategoria(categoria, params),
-    queryFn: () => noticiasService.getByCategoria(categoria, params),
-    enabled: !!categoria && categoria.length > 0,
   });
 }
