@@ -2,12 +2,12 @@ import api from './api';
 import type {
   InscricaoCampeonatoResponse,
   CreateInscricaoCampeonatoRequest,
-  StatusInscricao,
 } from '@/types/api.types';
 
 export const inscricoesService = {
   /**
    * Cria uma nova inscrição em campeonato
+   * Endpoint: POST /inscricoes-campeonato
    */
   async create(data: CreateInscricaoCampeonatoRequest): Promise<InscricaoCampeonatoResponse> {
     const response = await api.post<InscricaoCampeonatoResponse>('/inscricoes-campeonato', data);
@@ -16,6 +16,7 @@ export const inscricoesService = {
 
   /**
    * Obtém inscrição pelo ID
+   * Endpoint: GET /inscricoes-campeonato/{id}
    */
   async getById(id: number): Promise<InscricaoCampeonatoResponse> {
     const response = await api.get<InscricaoCampeonatoResponse>(`/inscricoes-campeonato/${id}`);
@@ -24,59 +25,65 @@ export const inscricoesService = {
 
   /**
    * Obtém inscrições de um campeonato
+   * Endpoint: GET /inscricoes-campeonato/{campeonatoId}
    */
   async getByCampeonato(campeonatoId: number): Promise<InscricaoCampeonatoResponse[]> {
     const response = await api.get<InscricaoCampeonatoResponse[]>(
-      `/inscricoes-campeonato/campeonato/${campeonatoId}`
+      `/inscricoes-campeonato/${campeonatoId}`
     );
     return response.data;
   },
 
   /**
    * Obtém inscrições de um time
+   * Endpoint: GET /inscricoes-time/{timeId}
    */
   async getByTime(timeId: number): Promise<InscricaoCampeonatoResponse[]> {
     const response = await api.get<InscricaoCampeonatoResponse[]>(
-      `/inscricoes-campeonato/time/${timeId}`
+      `/inscricoes-time/${timeId}`
     );
     return response.data;
   },
 
   /**
-   * Obtém inscrições por status (admin only)
+   * Atualiza uma inscrição (ex: mudar status)
+   * Endpoint: PUT /inscricoes/{id}
    */
-  async getByStatus(status: StatusInscricao): Promise<InscricaoCampeonatoResponse[]> {
-    const response = await api.get<InscricaoCampeonatoResponse[]>(
-      `/inscricoes-campeonato/status/${status}`
+  async update(id: number, data: Partial<InscricaoCampeonatoResponse>): Promise<InscricaoCampeonatoResponse> {
+    const response = await api.put<InscricaoCampeonatoResponse>(
+      `/inscricoes/${id}`, data
     );
     return response.data;
   },
 
   /**
    * Aprova uma inscrição (admin only)
+   * Usa: PUT /inscricoes/{id} com status APROVADA
    */
   async approve(id: number): Promise<InscricaoCampeonatoResponse> {
-    const response = await api.post<InscricaoCampeonatoResponse>(
-      `/inscricoes-campeonato/${id}/aprovar`
+    const response = await api.put<InscricaoCampeonatoResponse>(
+      `/inscricoes/${id}`, { status: 'APROVADA' }
     );
     return response.data;
   },
 
   /**
    * Rejeita uma inscrição (admin only)
+   * Usa: PUT /inscricoes/{id} com status REJEITADA
    */
   async reject(id: number): Promise<InscricaoCampeonatoResponse> {
-    const response = await api.post<InscricaoCampeonatoResponse>(
-      `/inscricoes-campeonato/${id}/rejeitar`
+    const response = await api.put<InscricaoCampeonatoResponse>(
+      `/inscricoes/${id}`, { status: 'REJEITADA' }
     );
     return response.data;
   },
 
   /**
-   * Deleta uma inscrição (admin only)
+   * Deleta uma inscrição
+   * Endpoint: DELETE /inscricoes/{id}
    */
   async delete(id: number): Promise<void> {
-    await api.delete(`/inscricoes-campeonato/${id}`);
+    await api.delete(`/inscricoes/${id}`);
   },
 };
 
