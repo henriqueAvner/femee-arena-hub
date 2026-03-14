@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Noticia from "@/pages/Noticia";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GuestRoute, ProtectedRoute, AdminRoute } from "@/components/auth/ProtectedRoute";
 import { LoadingPage } from "@/components/ui/loading";
@@ -42,6 +43,7 @@ const App = () => (
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
+              <Route path="/noticias/:slug" element={<Noticia />} />
               <Route path="/times" element={<Times />} />
               <Route path="/times/:teamId" element={<TeamDetail />} />
               <Route path="/ranking" element={<Ranking />} />
@@ -53,11 +55,8 @@ const App = () => (
                   <Login />
                 </GuestRoute>
               } />
-              <Route path="/registro" element={
-                <GuestRoute>
-                  <Registro />
-                </GuestRoute>
-              } />
+              {/* Registro removido: agora é modal na página inicial */}
+              {/* Rota /registro removida completamente */}
               
               {/* Protected Routes - Require authentication */}
               <Route path="/perfil" element={

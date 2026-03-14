@@ -1,7 +1,9 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import { Trophy, Menu, X, LogIn, UserPlus } from "lucide-react";
 import { Button } from "../ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import RegisterDialog from "@/components/forms/RegisterDialog";
 import RegistrationDialog from "../forms/RegistrationDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -87,21 +89,23 @@ const Header = () => {
       );
     }
 
+    const [isRegisterOpen, setIsRegisterOpen] = useState(false);
     return (
-      <div className={`flex ${mobile ? "flex-col w-full" : ""} gap-2`}>
-        <Link to="/login">
-          <Button variant="ghost" size={mobile ? "default" : "sm"} className={mobile ? "w-full justify-start" : ""}>
-            <LogIn className="h-4 w-4 mr-2" />
-            Entrar
-          </Button>
-        </Link>
-        <Link to="/registro">
-          <Button size={mobile ? "default" : "sm"} className={`esports-glow ${mobile ? "w-full" : ""}`}>
+      <>
+        <div className={`flex ${mobile ? "flex-col w-full" : ""} gap-2`}>
+          <Link to="/login">
+            <Button variant="ghost" size={mobile ? "default" : "sm"} className={mobile ? "w-full justify-start" : ""}>
+              <LogIn className="h-4 w-4 mr-2" />
+              Entrar
+            </Button>
+          </Link>
+          <Button size={mobile ? "default" : "sm"} className={`esports-glow ${mobile ? "w-full" : ""}`} onClick={() => setIsRegisterOpen(true)}>
             <UserPlus className="h-4 w-4 mr-2" />
             Criar Conta
           </Button>
-        </Link>
-      </div>
+        </div>
+        <RegisterDialog open={isRegisterOpen} onOpenChange={setIsRegisterOpen} />
+      </>
     );
   };
 

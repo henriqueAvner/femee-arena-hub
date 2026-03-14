@@ -1,8 +1,9 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { useState } from "react";
 import { toast } from "../ui/use-toast";
 import { useCreateInscricao } from "@/hooks/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +18,7 @@ interface RegistrationDialogProps {
 const RegistrationDialog = ({ open, onOpenChange, campeonatoId }: RegistrationDialogProps) => {
   const { isAuthenticated, user } = useAuth();
   const createInscricao = useCreateInscricao();
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     timeId: "",
@@ -95,7 +97,7 @@ const RegistrationDialog = ({ open, onOpenChange, campeonatoId }: RegistrationDi
           className="flex-1"
           onClick={() => {
             onOpenChange(false);
-            // TODO: Navegar para página de login
+            navigate('/?login=1');
           }}
         >
           Fazer Login
@@ -104,7 +106,7 @@ const RegistrationDialog = ({ open, onOpenChange, campeonatoId }: RegistrationDi
           className="flex-1"
           onClick={() => {
             onOpenChange(false);
-            // TODO: Navegar para página de cadastro
+            navigate('/?register=1');
           }}
         >
           Criar Conta

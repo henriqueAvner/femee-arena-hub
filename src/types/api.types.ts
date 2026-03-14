@@ -187,6 +187,17 @@ export interface CreateCampeonatoRequest {
 // NOTICIA DTOs
 // ============================================
 
+export interface NoticiaComment {
+  id: number;
+  autor: UserResponse;
+  data: string;
+  texto: string;
+  likes?: number;
+  replies?: NoticiaComment[];
+  aprovado?: boolean; // Moderation flag
+  criadoPorUsuario?: boolean; // Indica se foi postado pelo usuário atual (mock)
+}
+
 export interface NoticiaResponse {
   id: number;
   titulo: string;
@@ -199,6 +210,7 @@ export interface NoticiaResponse {
   dataPublicacao: string;
   visualizacoes: number;
   autor: UserResponse;
+  comments?: NoticiaComment[];
 }
 
 // ============================================

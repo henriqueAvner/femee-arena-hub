@@ -8,11 +8,12 @@ interface NewsCardProps {
   comments: number;
   image?: string;
   category: string;
+  onClick?: () => void;
 }
 
-const NewsCard = ({ title, excerpt, date, comments, image, category }: NewsCardProps) => {
+const NewsCard = ({ title, excerpt, date, comments, image, category, onClick }: NewsCardProps) => {
   return (
-    <Card className="overflow-hidden card-hover cursor-pointer bg-card border-border">
+    <Card className="overflow-hidden card-hover cursor-pointer bg-card border-border" onClick={onClick} tabIndex={0} role="button">
       {image && (
         <div className="aspect-video overflow-hidden">
           <img 

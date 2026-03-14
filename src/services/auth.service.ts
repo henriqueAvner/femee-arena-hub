@@ -9,6 +9,30 @@ import type {
 const AUTH_TOKEN_KEY = 'femee_token';
 const AUTH_USER_KEY = 'femee_user';
 
+/**
+ * Ativa modo mock para autenticação (usar sem backend).
+ * - email: user@femee.test / senha: password -> Usuário comum
+ * - email: admin@femee.test / senha: password -> Administrador
+ */
+const USE_MOCK = true;
+
+const mockUsers = [
+  {
+    id: 1,
+    name: 'Usuário Teste',
+    email: 'user@femee.test',
+    password: 'password',
+    tipoUsuario: 'JOGADOR',
+  },
+  {
+    id: 2,
+    name: 'Administrador',
+    email: 'admin@femee.test',
+    password: 'password',
+    tipoUsuario: 'ADMIN',
+  },
+];
+
 // ============================================
 // Tipos internos para comunicação com o backend
 // O backend usa campos em inglês (name, password)
@@ -75,6 +99,32 @@ export const authService = {
    * Mapeia: { email, senha } → { email, password }
    */
   async login(data: LoginRequest): Promise<LoginResponse> {
+    if (USE_MOCK) {
+      const mock = mockUsers.find((u) => u.email === data.email && u.password === data.senha);
+      if (!mock) {
+        return Promise.reject({ response: { data: { message: 'Email ou senha incorretos.' } } });
+      }
+
+      const response: LoginResponse = {
+        token: 'mock-token',
+        userId: mock.id,
+        email: mock.email,
+        nome: mock.name,
+        tipoUsuario: mapTipoUsuario(mock.tipoUsuario),
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+      };
+
+      localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify({
+        userId: response.userId,
+        email: response.email,
+        nome: response.nome,
+        tipoUsuario: response.tipoUsuario,
+      }));
+
+      return response;
+    }
+
     const backendPayload: BackendLoginRequest = {
       email: data.email,
       password: data.senha,
@@ -102,6 +152,36 @@ export const authService = {
    * Mapeia: { nome, email, senha, confirmacaoSenha } → { name, email, password, tipoUsuario }
    */
   async register(data: RegisterRequest): Promise<LoginResponse> {
+    if (USE_MOCK) {
+      const newUser = {
+        id: mockUsers.length + 1,
+        name: data.nome,
+        email: data.email,
+        password: data.senha,
+        tipoUsuario: 'JOGADOR',
+      };
+      mockUsers.push(newUser);
+
+      const response: LoginResponse = {
+        token: 'mock-token',
+        userId: newUser.id,
+        email: newUser.email,
+        nome: newUser.name,
+        tipoUsuario: mapTipoUsuario(newUser.tipoUsuario),
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
+      };
+
+      localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify({
+        userId: response.userId,
+        email: response.email,
+        nome: response.nome,
+        tipoUsuario: response.tipoUsuario,
+      }));
+
+      return response;
+    }
+
     const backendPayload: BackendRegisterRequest = {
       name: data.nome,
       email: data.email,

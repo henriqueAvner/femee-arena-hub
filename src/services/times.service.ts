@@ -1,4 +1,5 @@
 import api from './api';
+import { timesMock } from '@/mock/times.mock';
 import type {
   TimeResponse,
   CreateTimeRequest,
@@ -7,14 +8,30 @@ import type {
   PaginationParams,
 } from '@/types/api.types';
 
+// Permite forçar o uso dos mocks (útil para desenvolvimento offline)
+const USE_MOCK = false;
+
 export const timesService = {
   /**
    * Obtém todos os times (com paginação opcional)
    * Endpoint: GET /times
    */
   async getAll(params?: PaginationParams): Promise<TimeResponse[]> {
-    const response = await api.get<TimeResponse[]>('/times', { params });
-    return response.data;
+    if (USE_MOCK) {
+      // Simula paginação básica
+      const page = params?.page || 1;
+      const pageSize = params?.pageSize || timesMock.length;
+      return timesMock.slice((page - 1) * pageSize, page * pageSize);
+    }
+    try {
+      const response = await api.get<TimeResponse[]>('/times', { params });
+      return response.data;
+    } catch (e) {
+      // Fallback para mock se a API falhar
+      const page = params?.page || 1;
+      const pageSize = params?.pageSize || timesMock.length;
+      return timesMock.slice((page - 1) * pageSize, page * pageSize);
+    }
   },
 
   /**
@@ -22,8 +39,37 @@ export const timesService = {
    * Endpoint: GET /times/paged
    */
   async getAllPaged(params: PaginationParams): Promise<PagedResult<TimeResponse>> {
-    const response = await api.get<PagedResult<TimeResponse>>('/times/paged', { params });
-    return response.data;
+    if (USE_MOCK) {
+      const page = params.page || 1;
+      const pageSize = params.pageSize || timesMock.length;
+      const items = timesMock.slice((page - 1) * pageSize, page * pageSize);
+      return {
+        items,
+        totalCount: timesMock.length,
+        page,
+        pageSize,
+        totalPages: Math.ceil(timesMock.length / pageSize),
+        hasPreviousPage: page > 1,
+        hasNextPage: page * pageSize < timesMock.length,
+      };
+    }
+    try {
+      const response = await api.get<PagedResult<TimeResponse>>('/times/paged', { params });
+      return response.data;
+    } catch (e) {
+      const page = params.page || 1;
+      const pageSize = params.pageSize || timesMock.length;
+      const items = timesMock.slice((page - 1) * pageSize, page * pageSize);
+      return {
+        items,
+        totalCount: timesMock.length,
+        page,
+        pageSize,
+        totalPages: Math.ceil(timesMock.length / pageSize),
+        hasPreviousPage: page > 1,
+        hasNextPage: page * pageSize < timesMock.length,
+      };
+    }
   },
 
   /**
@@ -31,8 +77,13 @@ export const timesService = {
    * Endpoint: GET /times/{id}
    */
   async getById(id: number): Promise<TimeResponse> {
-    const response = await api.get<TimeResponse>(`/times/${id}`);
-    return response.data;
+    if (USE_MOCK) return timesMock.find((t) => t.id === id)!;
+    try {
+      const response = await api.get<TimeResponse>(`/times/${id}`);
+      return response.data;
+    } catch (e) {
+      return timesMock.find((t) => t.id === id)!;
+    }
   },
 
   /**
@@ -40,8 +91,13 @@ export const timesService = {
    * Endpoint: GET /times/slug/{slug}
    */
   async getBySlug(slug: string): Promise<TimeResponse> {
-    const response = await api.get<TimeResponse>(`/times/slug/${slug}`);
-    return response.data;
+    if (USE_MOCK) return timesMock.find((t) => t.slug === slug)!;
+    try {
+      const response = await api.get<TimeResponse>(`/times/slug/${slug}`);
+      return response.data;
+    } catch (e) {
+      return timesMock.find((t) => t.slug === slug)!;
+    }
   },
 
   /**

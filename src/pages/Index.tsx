@@ -7,13 +7,74 @@ import heroBanner from "@/assets/hero-banner.jpg";
 import { Button } from "@/components/ui/button";
 import { Newspaper, Trophy } from "lucide-react";
 import { useNoticiasRecentes, useCampeonatosAtivos } from "@/hooks/api";
+import { useNavigate, useMatch, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import RegisterDialog from "@/components/forms/RegisterDialog";
+import LoginDialog from "@/components/forms/LoginDialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import Noticia from "@/pages/Noticia";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { ErrorDisplay } from "@/components/ui/error-display";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Link } from "react-router-dom";
 import { StatusCampeonato } from "@/types/api.types";
 
+function NoticiasList({ noticias, onNewsClick }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {noticias.map((noticia) => (
+        <NewsCard
+          key={noticia.id}
+          title={noticia.titulo}
+          excerpt={noticia.resumo || noticia.conteudo.substring(0, 150) + '...'}
+          date={new Date(noticia.dataPublicacao).toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          })}
+          comments={noticia.comments ? noticia.comments.length : 0}
+          category={noticia.categoria || 'Notícias'}
+          image={noticia.imagemUrl || noticia.imagemCapa}
+          onClick={() => onNewsClick(noticia.slug)}
+        />
+      ))}
+    </div>
+  );
+}
+
 const Index = () => {
+  // Modal de registro
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  // Modal de login
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Abrir modal de registro/login via query param
+  useEffect(() => {
+    setIsRegisterOpen(searchParams.get('register') === '1');
+    setIsLoginOpen(searchParams.get('login') === '1');
+  }, [searchParams]);
+
+  // Sincroniza o estado do modal de registro com URL
+  const handleRegisterOpenChange = (open: boolean) => {
+    setIsRegisterOpen(open);
+    if (!open) {
+      searchParams.delete('register');
+      setSearchParams(searchParams, { replace: true });
+    }
+  };
+
+  // Sincroniza o estado do modal de login com URL
+  const handleLoginOpenChange = (open: boolean) => {
+    setIsLoginOpen(open);
+    if (!open) {
+      searchParams.delete('login');
+      setSearchParams(searchParams, { replace: true });
+    }
+  };
+
+  // Modal de notícia
+  const [selectedNewsSlug, setSelectedNewsSlug] = useState<string | null>(null);
   const { 
     data: noticias, 
     isLoading: isLoadingNoticias, 
@@ -43,6 +104,11 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+
+      {/* Modal de Registro */}
+      <RegisterDialog open={isRegisterOpen} onOpenChange={handleRegisterOpenChange} />
+      {/* Modal de Login */}
+      <LoginDialog open={isLoginOpen} onOpenChange={handleLoginOpenChange} />
       
       {/* Hero Section */}
       <section className="relative h-[500px] overflow-hidden">
@@ -72,10 +138,20 @@ const Index = () => {
               <Button size="lg" variant="secondary">
                 Sobre a FEMEE
               </Button>
+              <Button size="lg" variant="outline" onClick={() => setIsRegisterOpen(true)}>
+                Criar Conta
+              </Button>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Modal de Notícia */}
+      <Dialog open={!!selectedNewsSlug} onOpenChange={open => { if (!open) setSelectedNewsSlug(null); }}>
+        <DialogContent className="max-w-2xl w-full p-0 bg-background">
+          {selectedNewsSlug && <Noticia slug={selectedNewsSlug} isModal />}
+        </DialogContent>
+      </Dialog>
 
       {/* Main Content */}
       <div className="container py-12 px-4">
@@ -117,23 +193,7 @@ const Index = () => {
               )}
 
               {!isLoadingNoticias && !errorNoticias && noticias && noticias.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {noticias.map((noticia) => (
-                    <NewsCard 
-                      key={noticia.id}
-                      title={noticia.titulo}
-                      excerpt={noticia.resumo || noticia.conteudo.substring(0, 150) + '...'}
-                      date={new Date(noticia.dataPublicacao).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
-                      comments={0}
-                      category={noticia.categoria || 'Notícias'}
-                      image={noticia.imagemUrl || noticia.imagemCapa}
-                    />
-                  ))}
-                </div>
+                <NoticiasList noticias={noticias} onNewsClick={setSelectedNewsSlug} />
               )}
             </section>
 

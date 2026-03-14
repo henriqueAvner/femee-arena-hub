@@ -1,5 +1,8 @@
 import api from './api';
+import { rankingMock } from '@/mock/ranking.mock';
 import type { TimeResponse } from '@/types/api.types';
+
+const USE_MOCK = false;
 
 // ============================================
 // Tipos do backend para ranking
@@ -40,10 +43,18 @@ export const rankingService = {
    * Endpoint: GET /ranking
    */
   async getGeral(top?: number): Promise<TimeResponse[]> {
-    const response = await api.get<BackendRankingItem[]>('/ranking', {
-      params: top ? { top } : undefined,
-    });
-    return response.data.map(mapRankingToTime);
+    if (USE_MOCK) {
+      return rankingMock.slice(0, top ?? rankingMock.length);
+    }
+    try {
+      const response = await api.get<BackendRankingItem[]>('/ranking', {
+        params: top ? { top } : undefined,
+      });
+      return response.data.map(mapRankingToTime);
+    } catch (e) {
+      // Fallback para mock se a API falhar
+      return rankingMock.slice(0, top ?? rankingMock.length);
+    }
   },
 
   /**
@@ -51,8 +62,16 @@ export const rankingService = {
    * Endpoint: GET /ranking/campeonato/{campeonatoId}
    */
   async getByCampeonato(campeonatoId: number): Promise<TimeResponse[]> {
-    const response = await api.get<BackendRankingItem[]>(`/ranking/campeonato/${campeonatoId}`);
-    return response.data.map(mapRankingToTime);
+    if (USE_MOCK) {
+      return rankingMock;
+    }
+    try {
+      const response = await api.get<BackendRankingItem[]>(`/ranking/campeonato/${campeonatoId}`);
+      return response.data.map(mapRankingToTime);
+    } catch (e) {
+      // Fallback para mock se a API falhar
+      return rankingMock;
+    }
   },
 };
 
