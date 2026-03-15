@@ -28,7 +28,7 @@ const mockUsers = [
     id: 2,
     name: 'Administrador',
     email: 'admin@femee.test',
-    password: 'password',
+    password: '123123123',
     tipoUsuario: 'ADMIN',
   },
 ];
