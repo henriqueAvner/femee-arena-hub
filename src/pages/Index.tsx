@@ -1,303 +1,175 @@
-import Header from "@/components/layout/Header";
-import NewsCard from "@/components/features/NewsCard";
-import TeamRanking from "@/components/features/TeamRanking";
-import MerchandiseAd from "@/components/features/MerchandiseAd";
-import ChampionshipCard from "@/components/features/ChampionshipCard";
-import heroBanner from "@/assets/hero-banner.jpg";
-import { Button } from "@/components/ui/button";
-import { Newspaper, Trophy } from "lucide-react";
-import { useNoticiasRecentes, useCampeonatosAtivos } from "@/hooks/api";
-import { useNavigate, useMatch, useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import RegisterDialog from "@/components/forms/RegisterDialog";
-import LoginDialog from "@/components/forms/LoginDialog";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import Noticia from "@/pages/Noticia";
-import { LoadingSpinner } from "@/components/ui/loading";
-import { ErrorDisplay } from "@/components/ui/error-display";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Link } from "react-router-dom";
-import { StatusCampeonato } from "@/types/api.types";
+import { ArrowRight, Newspaper, Trophy, Users } from "lucide-react";
+import PageLayout from "@/components/layout/PageLayout";
+import { Button } from "@/components/ui/button";
+import NoticiaCard from "@/components/cards/NoticiaCard";
+import CampeonatoCard from "@/components/cards/CampeonatoCard";
+import TimeCard from "@/components/cards/TimeCard";
+import { LoadingSpinner } from "@/components/ui/loading";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useNoticias, useNoticiaDestaque } from "@/hooks/useNoticias";
+import { useCampeonatos } from "@/hooks/useCampeonatos";
+import { useTimes } from "@/hooks/useTimes";
+import heroBanner from "@/assets/hero-banner.jpg";
 
-function NoticiasList({ noticias, onNewsClick }) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {noticias.map((noticia) => (
-        <NewsCard
-          key={noticia.id}
-          title={noticia.titulo}
-          excerpt={noticia.resumo || noticia.conteudo.substring(0, 150) + '...'}
-          date={new Date(noticia.dataPublicacao).toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          })}
-          comments={noticia.comments ? noticia.comments.length : 0}
-          category={noticia.categoria || 'Notícias'}
-          image={noticia.imagemUrl || noticia.imagemCapa}
-          onClick={() => onNewsClick(noticia.slug)}
-        />
-      ))}
+const SectionHeader = ({
+  icon: Icon,
+  title,
+  subtitle,
+  to,
+  ctaLabel,
+}: {
+  icon: typeof Trophy;
+  title: string;
+  subtitle?: string;
+  to: string;
+  ctaLabel: string;
+}) => (
+  <div className="mb-6 flex items-end justify-between gap-4">
+    <div>
+      <div className="flex items-center gap-2 text-primary">
+        <Icon className="h-5 w-5" />
+        <span className="text-xs font-bold uppercase tracking-widest">{title}</span>
+      </div>
+      {subtitle && <h2 className="mt-1 text-3xl font-bold text-foreground">{subtitle}</h2>}
     </div>
-  );
-}
+    <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+      <Link to={to}>
+        {ctaLabel}
+        <ArrowRight className="ml-1 h-4 w-4" />
+      </Link>
+    </Button>
+  </div>
+);
 
 const Index = () => {
-  // Modal de registro
-  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  // Modal de login
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
-  
-  // Abrir modal de registro/login via query param
-  useEffect(() => {
-    setIsRegisterOpen(searchParams.get('register') === '1');
-    setIsLoginOpen(searchParams.get('login') === '1');
-  }, [searchParams]);
+  const { data: destaque } = useNoticiaDestaque();
+  const { data: noticias, isLoading: loadingNoticias } = useNoticias(4);
+  const { data: campeonatosAtivos, isLoading: loadingCamp } = useCampeonatos("em_andamento");
+  const { data: campeonatosFuturos } = useCampeonatos("futuro");
+  const { data: times, isLoading: loadingTimes } = useTimes();
 
-  // Sincroniza o estado do modal de registro com URL
-  const handleRegisterOpenChange = (open: boolean) => {
-    setIsRegisterOpen(open);
-    if (!open) {
-      searchParams.delete('register');
-      setSearchParams(searchParams, { replace: true });
-    }
-  };
-
-  // Sincroniza o estado do modal de login com URL
-  const handleLoginOpenChange = (open: boolean) => {
-    setIsLoginOpen(open);
-    if (!open) {
-      searchParams.delete('login');
-      setSearchParams(searchParams, { replace: true });
-    }
-  };
-
-  // Modal de notícia
-  const [selectedNewsSlug, setSelectedNewsSlug] = useState<string | null>(null);
-  const { 
-    data: noticias, 
-    isLoading: isLoadingNoticias, 
-    error: errorNoticias,
-    refetch: refetchNoticias 
-  } = useNoticiasRecentes(4);
-  
-  const { 
-    data: campeonatos, 
-    isLoading: isLoadingCampeonatos, 
-    error: errorCampeonatos,
-    refetch: refetchCampeonatos 
-  } = useCampeonatosAtivos();
-
-  // Mapear status do backend para o formato esperado pelo ChampionshipCard
-  const mapStatus = (status: StatusCampeonato): "registration-open" | "upcoming" | "ongoing" => {
-    switch (status) {
-      case StatusCampeonato.InscricoesAbertas:
-        return "registration-open";
-      case StatusCampeonato.EmAndamento:
-        return "ongoing";
-      default:
-        return "upcoming";
-    }
-  };
+  const proximos = [...(campeonatosAtivos ?? []), ...(campeonatosFuturos ?? [])].slice(0, 3);
+  const noticiasGrid = (noticias ?? []).filter((n) => n.id !== destaque?.id).slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      {/* Modal de Registro */}
-      <RegisterDialog open={isRegisterOpen} onOpenChange={handleRegisterOpenChange} />
-      {/* Modal de Login */}
-      <LoginDialog open={isLoginOpen} onOpenChange={handleLoginOpenChange} />
-      
-      {/* Hero Section */}
-      <section className="relative h-[500px] overflow-hidden">
-        <div className="absolute inset-0">
-          <img 
-            src={heroBanner}
-            alt="FEMEE Championship Arena"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        </div>
-        
-        <div className="relative container h-full flex items-end pb-12 px-4">
-          <div className="max-w-3xl space-y-4">
-            <h1 className="text-5xl md:text-6xl font-bold text-foreground">
-              Esportes Eletrônicos de <span className="text-primary">Minas Gerais</span>
+    <PageLayout>
+      {/* Hero */}
+      <section className="relative h-[480px] overflow-hidden">
+        <img
+          src={heroBanner}
+          alt="FEMEE Arena"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/30" />
+        <div className="container relative flex h-full items-end px-4 pb-14">
+          <div className="max-w-3xl space-y-5">
+            <span className="inline-block rounded bg-primary/20 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
+              Portal oficial
+            </span>
+            <h1 className="text-4xl font-bold leading-tight text-foreground md:text-6xl">
+              Esportes eletrônicos de <span className="text-primary">Minas Gerais</span>
             </h1>
-            <p className="text-xl text-muted-foreground">
-              A casa dos maiores campeonatos de esports do estado
+            <p className="max-w-xl text-lg text-muted-foreground">
+              Acompanhe as notícias, competições e times oficiais da Federação Mineira de Esportes
+              Eletrônicos.
             </p>
-            <div className="flex gap-3 pt-4">
-              <Link to="/campeonatos">
-                <Button size="lg" className="esports-glow">
-                  Ver Campeonatos
-                </Button>
-              </Link>
-              <Button size="lg" variant="secondary">
-                Sobre a FEMEE
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Button asChild size="lg" className="esports-glow">
+                <Link to="/campeonatos">Ver campeonatos</Link>
               </Button>
-              <Button size="lg" variant="outline" onClick={() => setIsRegisterOpen(true)}>
-                Criar Conta
+              <Button asChild size="lg" variant="outline">
+                <Link to="/noticias">Ler notícias</Link>
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Modal de Notícia */}
-      <Dialog open={!!selectedNewsSlug} onOpenChange={open => { if (!open) setSelectedNewsSlug(null); }}>
-        <DialogContent className="max-w-2xl w-full p-0 bg-background">
-          {selectedNewsSlug && <Noticia slug={selectedNewsSlug} isModal />}
-        </DialogContent>
-      </Dialog>
-
-      {/* Main Content */}
-      <div className="container py-12 px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Sidebar - Team Ranking */}
-          <aside className="lg:col-span-3 space-y-6">
-            <TeamRanking />
-          </aside>
-
-          {/* Main Content Area */}
-          <main className="lg:col-span-6 space-y-12">
-            {/* Latest News Section */}
-            <section id="noticias">
-              <div className="flex items-center gap-2 mb-6">
-                <Newspaper className="h-6 w-6 text-primary" />
-                <h2 className="text-3xl font-bold text-foreground">Últimas Notícias</h2>
-              </div>
-              
-              {isLoadingNoticias && (
-                <div className="flex justify-center py-12">
-                  <LoadingSpinner size="lg" />
-                </div>
-              )}
-
-              {errorNoticias && (
-                <ErrorDisplay
-                  title="Erro ao carregar notícias"
-                  message="Não foi possível carregar as notícias."
-                  onRetry={refetchNoticias}
-                />
-              )}
-
-              {!isLoadingNoticias && !errorNoticias && (!noticias || noticias.length === 0) && (
-                <EmptyState
-                  icon={Newspaper}
-                  title="Nenhuma notícia"
-                  description="Ainda não há notícias publicadas."
-                />
-              )}
-
-              {!isLoadingNoticias && !errorNoticias && noticias && noticias.length > 0 && (
-                <NoticiasList noticias={noticias} onNewsClick={setSelectedNewsSlug} />
-              )}
-            </section>
-
-            {/* Upcoming Championships Section */}
-            <section id="campeonatos">
-              <div className="flex items-center gap-2 mb-6">
-                <Trophy className="h-6 w-6 text-gold" />
-                <h2 className="text-3xl font-bold text-foreground">Próximos Campeonatos</h2>
-              </div>
-              
-              {isLoadingCampeonatos && (
-                <div className="flex justify-center py-12">
-                  <LoadingSpinner size="lg" />
-                </div>
-              )}
-
-              {errorCampeonatos && (
-                <ErrorDisplay
-                  title="Erro ao carregar campeonatos"
-                  message="Não foi possível carregar os campeonatos."
-                  onRetry={refetchCampeonatos}
-                />
-              )}
-
-              {!isLoadingCampeonatos && !errorCampeonatos && (!campeonatos || campeonatos.length === 0) && (
-                <EmptyState
-                  icon={Trophy}
-                  title="Nenhum campeonato"
-                  description="Ainda não há campeonatos ativos."
-                />
-              )}
-
-              {!isLoadingCampeonatos && !errorCampeonatos && campeonatos && campeonatos.length > 0 && (
-                <div className="space-y-6">
-                  {campeonatos.slice(0, 3).map((campeonato) => (
-                    <ChampionshipCard 
-                      key={campeonato.id}
-                      title={campeonato.titulo}
-                      game={campeonato.jogo?.nome || 'Não especificado'}
-                      date={`${new Date(campeonato.dataInicio).toLocaleDateString('pt-BR')}${
-                        campeonato.dataFim ? ` - ${new Date(campeonato.dataFim).toLocaleDateString('pt-BR')}` : ''
-                      }`}
-                      registrationDeadline={campeonato.dataLimiteInscricao 
-                        ? new Date(campeonato.dataLimiteInscricao).toLocaleDateString('pt-BR')
-                        : undefined
-                      }
-                      prize={`R$ ${campeonato.premiacao.toLocaleString('pt-BR')}`}
-                      teams={campeonato.numeroInscritos ?? 0}
-                      status={mapStatus(campeonato.status)}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
-          </main>
-
-          {/* Right Sidebar - Merchandise */}
-          <aside className="lg:col-span-3 space-y-6">
-            <MerchandiseAd />
-          </aside>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="border-t border-border bg-card mt-20">
-        <div className="container py-12 px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-foreground">FEMEE</h3>
-              <p className="text-sm text-muted-foreground">
-                Federação Mineira de Esportes Eletrônicos
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-3">Campeonatos</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Valorant</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">League of Legends</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">CS2</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-3">Institucional</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Sobre</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Contato</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Regulamento</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-foreground mb-3">Redes Sociais</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Instagram</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Twitter</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Discord</a></li>
-              </ul>
-            </div>
+      {/* Notícias */}
+      <section className="container px-4 py-16">
+        <SectionHeader
+          icon={Newspaper}
+          title="Últimas atualizações"
+          subtitle="Notícias"
+          to="/noticias"
+          ctaLabel="Ver todas"
+        />
+        {loadingNoticias && (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner size="lg" />
           </div>
-          <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            <p>© 2025 FEMEE - Todos os direitos reservados</p>
-          </div>
+        )}
+        {!loadingNoticias && !destaque && noticiasGrid.length === 0 && (
+          <EmptyState icon={Newspaper} title="Sem notícias" description="Volte em breve para novidades." />
+        )}
+        <div className="space-y-6">
+          {destaque && <NoticiaCard noticia={destaque} variant="featured" />}
+          {noticiasGrid.length > 0 && (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              {noticiasGrid.map((n) => (
+                <NoticiaCard key={n.id} noticia={n} />
+              ))}
+            </div>
+          )}
         </div>
-      </footer>
-    </div>
+      </section>
+
+      {/* Campeonatos */}
+      <section className="bg-card/40 py-16">
+        <div className="container px-4">
+          <SectionHeader
+            icon={Trophy}
+            title="Em andamento e próximos"
+            subtitle="Campeonatos"
+            to="/campeonatos"
+            ctaLabel="Ver todos"
+          />
+          {loadingCamp && (
+            <div className="flex justify-center py-12">
+              <LoadingSpinner size="lg" />
+            </div>
+          )}
+          {!loadingCamp && proximos.length === 0 && (
+            <EmptyState
+              icon={Trophy}
+              title="Nenhum campeonato ativo"
+              description="Em breve novas competições serão anunciadas."
+            />
+          )}
+          {proximos.length > 0 && (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {proximos.map((c) => (
+                <CampeonatoCard key={c.id} campeonato={c} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Times */}
+      <section className="container px-4 py-16">
+        <SectionHeader
+          icon={Users}
+          title="Equipes filiadas"
+          subtitle="Times em destaque"
+          to="/times"
+          ctaLabel="Ver todos"
+        />
+        {loadingTimes && (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        )}
+        {times && times.length > 0 && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {times.slice(0, 4).map((t) => (
+              <TimeCard key={t.id} time={t} />
+            ))}
+          </div>
+        )}
+      </section>
+    </PageLayout>
   );
 };
 
