@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/noticias", label: "Notícias" },
   { href: "/campeonatos", label: "Campeonatos" },
   { href: "/times", label: "Times" },
+  { href: "/ranking", label: "Ranking" },
   { href: "/sobre", label: "Sobre" },
 ];
 
