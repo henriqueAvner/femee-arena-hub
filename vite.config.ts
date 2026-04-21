@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => ({
             "@radix-ui/react-tooltip",
           ],
           "vendor-form": ["react-hook-form", "@hookform/resolvers", "zod"],
-          "vendor-utils": ["axios", "date-fns", "clsx", "tailwind-merge"],
+          "vendor-utils": ["date-fns", "clsx", "tailwind-merge"],
         },
       },
     },
@@ -49,7 +49,6 @@ export default defineConfig(({ mode }) => ({
       "react-dom",
       "react-router-dom",
       "@tanstack/react-query",
-      "axios",
     ],
   },
 }));
