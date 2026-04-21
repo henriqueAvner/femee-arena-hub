@@ -18,20 +18,35 @@ export type Database = {
         Row: {
           campeonato_id: string
           created_at: string
+          derrotas: number
+          empates: number
           id: string
+          pontos: number
+          posicao: number | null
           time_id: string
+          vitorias: number
         }
         Insert: {
           campeonato_id: string
           created_at?: string
+          derrotas?: number
+          empates?: number
           id?: string
+          pontos?: number
+          posicao?: number | null
           time_id: string
+          vitorias?: number
         }
         Update: {
           campeonato_id?: string
           created_at?: string
+          derrotas?: number
+          empates?: number
           id?: string
+          pontos?: number
+          posicao?: number | null
           time_id?: string
+          vitorias?: number
         }
         Relationships: [
           {
@@ -40,6 +55,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "campeonatos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campeonato_times_time_id_fkey"
+            columns: ["time_id"]
+            isOneToOne: false
+            referencedRelation: "ranking_times"
+            referencedColumns: ["time_id"]
           },
           {
             foreignKeyName: "campeonato_times_time_id_fkey"
@@ -137,6 +159,13 @@ export type Database = {
             foreignKeyName: "jogadores_time_id_fkey"
             columns: ["time_id"]
             isOneToOne: false
+            referencedRelation: "ranking_times"
+            referencedColumns: ["time_id"]
+          },
+          {
+            foreignKeyName: "jogadores_time_id_fkey"
+            columns: ["time_id"]
+            isOneToOne: false
             referencedRelation: "times"
             referencedColumns: ["id"]
           },
@@ -225,7 +254,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      ranking_times: {
+        Row: {
+          campeonatos_disputados: number | null
+          cidade: string | null
+          derrotas: number | null
+          empates: number | null
+          logo: string | null
+          nome: string | null
+          pontos: number | null
+          sigla: string | null
+          slug: string | null
+          time_id: string | null
+          vitorias: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
