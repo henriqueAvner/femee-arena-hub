@@ -1,0 +1,1 @@
+ALTER VIEW public.ranking_times SET (security_invoker = true);
